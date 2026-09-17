@@ -1,50 +1,52 @@
+-- 1. Tạo Cơ sở dữ liệu InventoryManagement
 CREATE DATABASE IF NOT EXISTS InventoryManagement;
 USE InventoryManagement;
 
--- Bước 1 tạo bảng Products
-CREATE TABLE Products (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    quantity INT NOT NULL
+-- 2. Tạo bảng products
+CREATE TABLE products (
+    productID INT AUTO_INCREMENT PRIMARY KEY,
+    productName VARCHAR(100) NOT NULL,
+    quantity INT NOT NULL DEFAULT 0
 );
 
--- Bước 2 tạo bảng InventoryChanges
-CREATE TABLE InventoryChanges (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    product_id INT NOT NULL,
-    old_quantity INT NOT NULL,
-    new_quantity INT NOT NULL,
-    change_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (product_id) REFERENCES Products(id)
+-- 3. Tạo bảng inventoryChanges
+CREATE TABLE inventoryChanges (
+    changeID INT AUTO_INCREMENT PRIMARY KEY,
+    productID INT NOT NULL,
+    oldQuantity INT,
+    newQuantity INT,
+    changeDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_inventory_products 
+        FOREIGN KEY (productID) REFERENCES products(productID) 
+        ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
-
--- Bước 3 tạo trigger AfterProductUpdate
+-- 4. Tạo Trigger AfterProductUpdate
 DELIMITER //
 
 CREATE TRIGGER AfterProductUpdate
-AFTER UPDATE ON Products
+AFTER UPDATE ON products
 FOR EACH ROW
 BEGIN
-    -- Ghi lại thông tin thay đổi vào bảng InventoryChanges
-    INSERT INTO InventoryChanges (product_id, old_quantity, new_quantity)
-    VALUES (NEW.id, OLD.quantity, NEW.quantity);
+
+    INSERT INTO inventoryChanges (productID, oldQuantity, newQuantity, changeDate)
+    VALUES (NEW.productID, OLD.quantity, NEW.quantity, NOW());
 END //
 
 DELIMITER ;
 
--- Bước 4 thêm dữ liệu vào bảng Products
 
 INSERT INTO Products (name, quantity) VALUES
-('Product test 1', 555),
-('Product test 2', 333),
-('Product test 3', 215);
+('Product test A', 100),
+('Product test B', 150),
+('Product test C', 200);
 
--- Bước 5 Cập nhật quantity
+-- Bước 5 
+-- Cập nhật số lượng cho Product test A từ 100 sang 120
+UPDATE Products SET quantity = 120 WHERE name = 'Product test A';
 
-UPDATE Products SET quantity = 280 WHERE name = 'Product test 1';
-
-UPDATE Products SET quantity = 330 WHERE name = 'Product test 2';
+-- Cập nhật số lượng cho Product test B từ 150 sang 130
+UPDATE Products SET quantity = 130 WHERE name = 'Product test B';
 
 
 -- Bước 6 : Kiểm tra kết quả
